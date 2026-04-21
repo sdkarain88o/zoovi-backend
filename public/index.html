@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Zoovi Shop</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{font-family:Arial;background:#f4f4f4;margin:0}
+.header{background:#d63384;color:white;padding:15px;text-align:center}
+.card{background:white;margin:10px;padding:10px;border-radius:10px}
+button{background:#000;color:#fff;border:none;padding:8px}
+</style>
+</head>
+
+<body>
+
+<h2>🛍️ Zoovi Store</h2>
+
+<div id="products"></div>
+
+<hr>
+
+<h3>🛒 Cart</h3>
+<div id="cart"></div>
+
+<h3>Total: Rs <span id="total">0</span></h3>
+
+<button onclick="checkout()">Checkout</button>
+
+<div class="header">💄 Zoovi Shop</div>
+
+<div id="list"></div>
+
+<hr>
+
+<h2 style="text-align:center;">🛒 Cart</h2>
+<pre id="cartBox">Empty</pre>
+
+<button onclick="checkout()" style="width:100%;padding:10px;background:black;color:white;">
+Checkout 💳
+</button>
+<h2>🛍️ Zoovi Store</h2>
+
+<button onclick="payNow()">Pay Now</button>
+
+<script>
+function payNow(){
+
+fetch("/create-payment",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body: JSON.stringify({
+amount: 1000
+})
+})
+.then(res=>res.json())
+.then(data=>{
+alert("Payment started ✔ Order ID: " + data.payment.orderId);
+
+window.location.href = "/payment-success?orderId=" + data.payment.orderId;
+});
+
+}
+</script>
+
+<div id="products"></div>
+<script>
+
+let cart = [];
+
+function loadProducts(){
+
+fetch("/products")
+.then(res=>res.json())
+.then(data=>{
+
+let html = "";
+
+data.forEach(p=>{
+
+html += `
+<div style="border:1px solid #ccc;padding:10px;margin:10px;width:200px;display:inline-block;">
+
+<img src="${p.image}" width="100%"><br>
+
+<h3>${p.name}</h3>
+<p>Rs ${p.price}</p>
+
+<button onclick="addToCart('${p.name}',${p.price})">
+Add to Cart
+</button>
+
+</div>
+`;
+
+});
+
+document.getElementById("products").innerHTML = html;
+
+});
+
+}
+
+function addToCart(name,price){
+
+cart.push({name,price});
+renderCart();
+
+}
+
+function renderCart(){
+
+let html = "";
+let total = 0;
+
+cart.forEach((c,index)=>{
+
+html += `
+<div>
+${c.name} - Rs ${c.price}
+<button onclick="removeItem(${index})">❌</button>
+</div>
+`;
+
+total += Number(c.price);
+
+});
+
+document.getElementById("cart").innerHTML = html;
+document.getElementById("total").innerText = total;
+
+}
+
+function removeItem(index){
+cart.splice(index,1);
+renderCart();
+}
+
+function checkout(){
+
+if(cart.length === 0){
+alert("Cart empty ❌");
+return;
+}
+
+let items = cart.map(c=>c.name).join(", ");
+let total = cart.reduce((sum,c)=>sum + Number(c.price),0);
+
+fetch(`/order?items=${items}&total=${total}`)
+.then(res=>res.text())
+.then(data=>{
+
+alert("Order placed ✔");
+cart = [];
+renderCart();
+
+});
+
+}
+
+loadProducts();
+
+function loadProducts(){
+
+fetch("/products")
+.then(res=>res.json())
+.then(data=>{
+
+let html = "";
+
+data.forEach(p=>{
+
+html += `
+<div style="border:1px solid #ccc;padding:10px;margin:10px;width:200px;display:inline-block;">
+
+<img src="${p.image}" width="100%"><br>
+
+<h3>${p.name}</h3>
+<p>Rs ${p.price}</p>
+
+<button onclick="addToCart('${p.name}',${p.price})">
+Add to Cart
+</button>
+loadProducts();
+</div>
+`;
+
+});
+
+document.getElementById("products").innerHTML = html;
+
+});
+
+}
+
+function checkout(){
+
+if(cart.length === 0){
+alert("Cart empty ❌");
+return;
+}
+
+let total = 0;
+let items = "";
+
+cart.forEach(c=>{
+items += `${c.name} x${c.qty}, `;
+total += c.price * c.qty;
+});
+
+// 📲 WhatsApp number (change this)
+let phone = "923001234567";
+
+// 🧾 Message create
+let msg = `🛒 New Order\n\nItems: ${items}\nTotal: Rs ${total}\n\nPlease confirm order ✔`;
+
+// 📲 Open WhatsApp
+window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg));
+
+// (optional backend order save)
+fetch(`/order?items=${items}&total=${total}`)
+.then(res=>res.text())
+.then(data=>{
+console.log("Order saved");
+});
+
+cart = [];
+renderCart();
+
+}
+
+// 🧾 SHOW CART
+function renderCart(){
+
+let total = 0;
+let text = "🛒 CART:\n\n";
+
+cart.forEach((c,i)=>{
+text += `${i+1}. ${c.name} x${c.qty} = Rs ${c.price*c.qty}\n`;
+total += c.price*c.qty;
+});
+
+text += "\nTOTAL: Rs " + total;
+
+document.getElementById("cartBox").innerText = text;
+}
+
+// ❌ REMOVE ITEM
+function removeItem(name){
+cart = cart.filter(i=>i.name!==name);
+renderCart();
+}
+
+// 💳 CHECKOUT (WHATSAPP)
+function checkout(){
+
+if(cart.length === 0){
+alert("Cart empty ❌");
+return;
+}
+
+let msg = document.getElementById("cartBox").innerText;
+
+let phone = "923001234567";
+let url = "https://wa.me/" + phone + "?text=" + encodeURIComponent(msg);
+
+window.open(url,"_blank");
+}
+
+loadProducts();
+
+let cart = [];
+
+function addToCart(name,price){
+
+cart.push({name,price});
+
+alert("Added to cart ✔");
+
+}
+
+</script>
+
+</body>
+</html>

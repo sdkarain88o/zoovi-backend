@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>Zoovi Admin Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+font-family:Arial;
+margin:0;
+background:#f4f4f4;
+}
+
+.header{
+background:#000;
+color:#fff;
+padding:15px;
+text-align:center;
+font-size:22px;
+}
+
+.box{
+background:#fff;
+margin:10px;
+padding:15px;
+border-radius:10px;
+}
+
+.count{
+font-size:28px;
+font-weight:bold;
+}
+
+button{
+width:100%;
+padding:10px;
+background:#d63384;
+color:white;
+border:none;
+margin-top:10px;
+}
+
+pre{
+background:#eee;
+padding:10px;
+overflow:auto;
+}
+
+<button onclick="delivery(${o.id},'Shipped')">Shipped</button>
+<button onclick="delivery(${o.id},'Out for Delivery')">Out</button>
+<button onclick="delivery(${o.id},'Delivered')">Delivered</button>
+
+<button onclick="openInvoice(${o.id})"
+style="background:purple;color:white;">
+Invoice
+</button>
+
+<button onclick="downloadPDF(${o.id})"
+style="background:black;color:white;">
+Download PDF
+</button>
+
+<hr>
+<h2>⚠ Low Stock Alerts</h2>
+<div id="lowStock"></div>
+
+<hr>
+
+<h2>💰 Revenue Dashboard</h2>
+
+<p>Total Orders: <span id="torders">0</span></p>
+<p>Total Revenue: Rs <span id="trevenue">0</span></p>
+
+<div class="box">
+<h3>👥 Admin List</h3>
+<div id="adminList"></div>
+</div>
+
+<hr>
+
+<h2>📊 Sales Analytics</h2>
+
+<canvas id="salesChart" width="400" height="200"></canvas>
+
+<h2>🥧 Product Distribution</h2>
+
+<canvas id="pieChart" width="400" height="200"></canvas>
+
+<h2>📅 Monthly Report</h2>
+
+<div id="report"></div>
+
+<div class="box">
+<h3>➕ Add Admin</h3>
+
+<input id="newUser" placeholder="Username">
+<input id="newPass" placeholder="Password">
+<select id="newRole">
+<option value="admin">Admin</option>
+<option value="seller">Seller</option>
+</select>
+
+<button onclick="addAdmin()">Add Admin</button>
+
+<p id="adminMsg"></p>
+</div>
+
+<div class="box">
+<h3>➕ Add Product</h3>
+
+<input id="pname" placeholder="Product Name" style="width:100%;padding:8px;">
+<input id="pprice" placeholder="Price" style="width:100%;padding:8px;margin-top:5px;">
+
+<button onclick="addProduct()">Add Product</button>
+
+<p id="msg"></p>
+</div>
+
+</style>
+</head>
+
+<body>
+
+<hr>
+<h2>📦 Stock Management</h2>
+
+<div id="stockList"></div>
+
+<button onclick="logout()">Logout</button>
+
+<hr>
+
+<h2>📦 Admin Orders</h2>
+<div id="orders"></div>
+
+<div class="box">
+<h3>➕ Add Product</h3>
+
+<input id="pname" placeholder="Product Name">
+<input id="pprice" placeholder="Price">
+<input id="pimg" placeholder="Image URL">
+
+<button onclick="addProduct()">Add</button>
+
+<p id="msg"></p>
+</div>
+
+<div class="box">
+<h3>🍩 Product Share (Pie Chart)</h3>
+
+<canvas id="pieChart" width="300" height="300"
+style="background:#fff;border:1px solid #ccc;border-radius:10px;"></canvas>
+
+<button onclick="drawPie()">Load Pie Chart</button>
+</div>
+
+<div class="box">
+<h3>📊 Sales Graph</h3>
+
+<canvas id="chart" width="300" height="150"
+style="background:#fff;border:1px solid #ccc;"></canvas>
+
+<button onclick="drawChart()">Load Graph</button>
+</div>
+
+<div class="box">
+<h3>📅 Monthly Report</h3>
+
+<input id="month" placeholder="2026-04">
+
+<button onclick="loadReport()">Generate Report</button>
+
+<p id="report"></p>
+</div>
+
+<div class="box">
+<h3>📈 Total Profit</h3>
+<div class="count" id="profit">0</div>
+<button onclick="loadProfit()">Refresh Profit</button>
+</div>
+loadPieChart();
+<div class="header">💼 Zoovi Admin Dashboard</div>
+
+<div class="box">
+<h3>📦 Total Products</h3>
+<div class="count" id="pcount">0</div>
+<button onclick="loadProducts()">Refresh Products</button>
+</div>
+
+<div class="box">
+<h3>💰 Total Revenue</h3>
+<div class="count" id="revenue">0</div>
+<button onclick="loadRevenue()">Refresh Revenue</button>
+</div>
+
+loadLowStock();
+
+<button onclick="logout()">Logout</button>
+
+<div class="box">
+<h3>🧾 Total Orders</h3>
+<div class="count" id="ocount">0</div>
+<button onclick="loadOrders()">Refresh Orders</button>
+</div>
+
+loadChart();
+
+<div class="box">
+<h3>📦 Product Data</h3>
+<pre id="products">Loading...</pre>
+</div>
+
+loadStock();
+
+<div class="box">
+<h3>📊 Order Filter</h3>
+
+<button onclick="loadOrders('all')">All</button>
+<button onclick="loadOrders('Pending')">Pending</button>
+<button onclick="loadOrders('Delivered')">Delivered</button>
+<button onclick="loadOrders('Cancelled')">Cancelled</button>
+</div>
+
+drawChart();
+
+<div class="box">
+<h3>🧾 Orders Data</h3>
+<pre id="orders">Loading...</pre>
+</div>
+loadOrders("all");
+<button onclick="logout()" style="background:black;">
+Logout 🚪
+</button>
+
+<button onclick="logout()">Logout</button>
+
+<script>
+function logout(){
+localStorage.removeItem("token");
+location.href="login.html";
+}
+</script>
+
+<script>
+let token = localStorage.getItem("token");
+
+if(!token){
+window.location.href = "login.html";
+}
+
+fetch(`/verify-admin?token=${token}`)
+.then(res=>res.json())
+.then(data=>{
+
+if(!data.success){
+localStorage.removeItem("token");
+window.location.href = "login.html";
+}
+
+});
+</script>
+
+<script/>
+
+<script>
+let token = localStorage.getItem("token");
+
+if(!token){
+window.location.href = "login.html";
+}
+</script>
+
+function loadLowStock(){
+
+fetch("/low-stock")
+.then(res=>res.json())
+.then(data=>{
+
+let html = "";
+
+if(data.length === 0){
+html = "<p>All stock is OK 👍</p>";
+}else{
+
+data.forEach(p=>{
+html += `
+<div style="border:1px solid red;padding:10px;margin:5px;">
+<b>${p.name}</b><br>
+Stock Left: ${p.stock}
+</div>
+`;
+});
+
+}
+
+document.getElementById("lowStock").innerHTML = html;
+
+});
+
+}
+
+function loadStock(){
+
+fetch("/products")
+.then(res=>res.json())
+.then(data=>{
+
+let html = "";
+
+data.forEach(p=>{
+
+html += `
+<div>
+${p.name} | Stock: ${p.stock}
+
+<input id="s${p.id}" placeholder="New Stock">
+
+<button onclick="saveStock(${p.id})">Save</button>
+</div>
+`;
+
+});
+
+document.getElementById("stockList").innerHTML = html;
+
+});
+
+}
+
+function saveStock(id){
+
+let val = document.getElementById("s"+id).value;
+
+fetch(`/update-stock?id=${id}&stock=${val}`)
+.then(res=>res.text())
+.then(data=>{
+loadStock();
+});
+
+}
+
+function delivery(id,status){
+
+fetch(`/update-delivery?id=${id}&status=${status}`)
+.then(res=>res.text())
+.then(data=>{
+loadOrders();
+});
+
+}
+
+let token = localStorage.getItem("token");
+
+fetch(`/verify-admin?token=${token}`)
+.then(res=>res.json())
+.then(data=>{
+
+if(!data.success){
+location.href="login.html";
+}
+
+});
+
+function logout(){
+
+fetch("/admin-logout")
+.then(()=>{
+
+localStorage.removeItem("token");
+location.href="login.html";
+
+});
+
+}
+
+
+let token = localStorage.getItem("token");
+
+fetch(`/verify-admin?token=${token}`)
+.then(res=>res.json())
+.then(data=>{
+
+if(!data.success){
+location.href="login.html";
+}
+
+});
+
+function logout(){
+
+fetch("/admin-logout")
+.then(()=>{
+localStorage.removeItem("token");
+location.href="login.html";
+});
+
+}
+
+let pie;
+
+function loadPieChart(){
+
+fetch("/product-report")
+.then(res=>res.json())
+.then(data=>{
+
+let labels = Object.keys(data);
+let values = Object.values(data);
+
+if(pie){
+pie.destroy();
+}
+
+pie = new Chart(document.getElementById("pieChart"),{
+type: "pie",
+data: {
+labels: labels,
+datasets: [{
+data: values
+}]
+}
+});
+
+});
+
+}
+
+let chart;
+
+function loadChart(){
+
+fetch("/monthly-report")
+.then(res=>res.json())
+.then(data=>{
+
+let labels = [];
+let values = [];
+
+for(let key in data){
+labels.push(key);
+values.push(data[key].revenue);
+}
+
+if(chart){
+chart.destroy();
+}
+
+chart = new Chart(document.getElementById("salesChart"),{
+type: "bar",
+data: {
+labels: labels,
+datasets: [{
+label: "Revenue (Rs)",
+data: values
+}]
+}
+});
+
+});
+
+}
+
+function loadOrders(){
+
+fetch("/orders")
+.then(res=>res.json())
+.then(data=>{
+
+let html = "";
+
+data.forEach(o=>{
+
+html += `
+<div style="border:1px solid #ccc;margin:10px;padding:10px;">
+
+<b>ID:</b> ${o.id}<br>
+<b>Items:</b> ${o.items}<br>
+<b>Total:</b> Rs ${o.total}<br>
+<b>Status:</b> ${o.status}<br>
+<b>Payment:</b> ${o.payment}<br>
+
+<button onclick="updateStatus(${o.id},'Confirmed')">
+Confirm
+</button>
+
+<button onclick="updateStatus(${o.id},'Pending')">
+Pending
+</button>
+
+</div>
+`;
+
+});
+
+document.getElementById("orders").innerHTML = html;
+
+});
+
+}
+
+function updateStatus(id,status){
+
+fetch(`/update-status?id=${id}&status=${status}`)
+.then(res=>res.text())
+.then(data=>{
+
+loadOrders();
+
+});
+
+}
+
+function addProduct(){
+
+let name = document.getElementById("pname").value;
+let price = document.getElementById("pprice").value;
+let image = document.getElementById("pimg").value;
+
+fetch(`/add-product?name=${name}&price=${price}&image=${image}`)
+.then(res=>res.text())
+.then(data=>{
+
+document.getElementById("msg").innerText = data;
+
+});
+
+}
+
+function downloadPDF(id){
+
+window.open(`/invoice-pdf?id=${id}`, "_blank");
+
+}
+
+function openInvoice(id){
+
+fetch(`/invoice?id=${id}`)
+.then(res=>res.json())
+.then(o=>{
+
+let win = window.open("", "_blank");
+
+win.document.write(`
+<h2>🧾 Zoovi Invoice</h2>
+<hr>
+
+<b>Order ID:</b> ${o.id}<br>
+<b>Items:</b> ${o.items}<br>
+<b>Total:</b> Rs ${o.total}<br>
+<b>Status:</b> ${o.status}<br>
+<b>Payment:</b> ${o.payment}<br>
+<b>Date:</b> ${o.time}
+
+<hr>
+<h3>Thank you for shopping ❤️</h3>
+`);
+
+});
+
+}
+
+function loadAdmins(){
+
+fetch("/admins")
+.then(res=>res.json())
+.then(data=>{
+
+let html = "";
+
+data.forEach(a=>{
+
+html += `
+<div style="padding:5px;background:#eee;margin:5px;">
+
+<b>${a.username}</b> (${a.role})
+
+<button onclick="deleteAdmin('${a.username}')"
+style="background:red;color:white;">
+Delete
+</button>
+
+</div>
+`;
+
+});
+
+document.getElementById("adminList").innerHTML = html;
+
+});
+
+}
+
+function addAdmin(){
+
+let username = document.getElementById("newUser").value;
+let password = document.getElementById("newPass").value;
+let role = document.getElementById("newRole").value;
+
+fetch(`/add-admin?username=${username}&password=${password}&role=${role}`)
+.then(res=>res.text())
+.then(data=>{
+
+document.getElementById("adminMsg").innerText = data;
+
+});
+
+}
+
+function drawChart(){
+
+fetch("/orders")
+.then(res=>res.json())
+.then(data=>{
+
+let canvas = document.getElementById("chart");
+let ctx = canvas.getContext("2d");
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+let days = {};
+
+data.forEach(o=>{
+let d = new Date(o.time).getDate();
+
+if(!days[d]){
+days[d] = 0;
+}
+
+days[d] += Number(o.total);
+});
+
+let keys = Object.keys(days);
+
+let x = 10;
+
+keys.forEach(day=>{
+
+let val = days[day] / 10; // scale
+
+ctx.fillStyle = "green";
+ctx.fillRect(x,150-val,20,val);
+
+ctx.fillStyle = "black";
+ctx.fillText(day,x,140);
+
+x += 30;
+
+});
+
+});
+
+}
+
+function loadOrders(filter="all"){
+
+fetch("/orders")
+.then(res=>res.json())
+.then(data=>{
+
+document.getElementById("ocount").innerText = data.length;
+
+let html = "";
+
+data.forEach(o=>{
+
+if(filter !== "all" && o.status !== filter){
+return;
+}
+
+html += `
+<div style="background:#eee;padding:10px;margin:5px 0;">
+
+<b>Order ID:</b> ${o.id}<br>
+<b>Items:</b> ${o.items}<br>
+<b>Total:</b> Rs ${o.total}<br>
+<b>Status:</b> ${o.status}
+
+<br><br>
+
+<button onclick="updateStatus(${o.id},'Delivered')" style="background:green;color:white;">
+Deliver
+</button>
+
+<button onclick="updateStatus(${o.id},'Cancelled')" style="background:red;color:white;">
+Cancel
+</button>
+
+<button onclick="deleteOrder(${o.id})" style="background:black;color:white;">
+Delete
+</button>
+
+</div>
+`;
+});
+
+document.getElementById("orders").innerHTML = html;
+
+});
+
+}
+
+html += `
+<div style="background:#eee;padding:10px;margin:5px 0;">
+
+<b>Order ID:</b> ${o.id}<br>
+<b>Items:</b> ${o.items}<br>
+<b>Total:</b> Rs ${o.total}<br>
+<b>Status:</b> ${o.status}
+
+<br><br>
+loadRevenue();
+<button onclick="updateStatus(${o.id},'Delivered')" style="background:green;color:white;">
+Deliver
+</button>
+
+loadProfit();
+
+<button onclick="updateStatus(${o.id},'Cancelled')" style="background:red;color:white;">
+Cancel
+</button>
+drawPie();
+</div>
+`;
+
+});
+
+document.getElementById("orders").innerHTML = html;
+
+});
+
+}
+
+html += `
+<div style="padding:5px;background:#eee;margin:5px;">
+
+<b>${a.username}</b> (${a.role})
+
+<br>
+
+<input id="u${a.username}" placeholder="New Username">
+<input id="p${a.username}" placeholder="New Password">
+
+<select id="r${a.username}">
+<option value="admin">Admin</option>
+<option value="seller">Seller</option>
+</select>
+
+<button onclick="editAdmin('${a.username}')"
+style="background:blue;color:white;">
+Edit
+</button>
+
+loadRevenue();
+
+<button onclick="deleteAdmin('${a.username}')"
+style="background:red;color:white;">
+Delete
+</button>
+
+loadOrders();
+
+</div>
+`;
+
+<b>Payment:</b> ${o.payment}<br>
+
+<button onclick="updatePayment(${o.id},'Paid')"
+style="background:green;color:white;">
+Mark Paid
+</button>
+
+loadReport();
+
+<button onclick="updatePayment(${o.id},'Unpaid')"
+style="background:orange;color:white;">
+Unpaid
+</button>
+
+function updatePayment(id,status){
+
+fetch(`/payment?id=${id}&payment=${status}`)
+.then(res=>res.text())
+.then(data=>{
+
+loadOrders();
+
+});
+
+}
+
+function editAdmin(username){
+
+let newUsername = document.getElementById("u"+username).value;
+let newPassword = document.getElementById("p"+username).value;
+let newRole = document.getElementById("r"+username).value;
+
+fetch(`/edit-admin?username=${username}&newUsername=${newUsername}&newPassword=${newPassword}&newRole=${newRole}`)
+.then(res=>res.text())
+.then(data=>{
+
+loadAdmins();
+
+});
+
+}
+
+function editProduct(id){
+
+let name = document.getElementById("name"+id).value;
+let price = document.getElementById("price"+id).value;
+
+fetch(`/edit?id=${id}&name=${name}&price=${price}`)
+.then(res=>res.text())
+.then(data=>{
+loadProducts();
+});
+
+}
+
+// 📦 GET ORDERS
+app.get("/orders",(req,res)=>{
+res.json(loadOrders());
+});
+
+function updateStatus(id,status){
+
+fetch(`/status?id=${id}&status=${status}`)
+.then(res=>res.text())
+.then(data=>{
+loadOrders();
+});
+
+}
+
+function loadRevenue(){
+
+fetch("/revenue")
+.then(res=>res.json())
+.then(data=>{
+
+document.getElementById("revenue").innerText =
+"Rs " + data.revenue;
+
+});
+
+}
+
+function deleteOrder(id){
+
+fetch(`/delete-order?id=${id}`)
+.then(res=>res.text())
+.then(data=>{
+loadOrders();
+});
+
+}
+
+function loadProfit(){
+
+fetch("/profit")
+.then(res=>res.json())
+.then(data=>{
+
+document.getElementById("profit").innerText =
+"Rs " + data.profit;
+
+});
+
+}
+
+function loadReport(){
+
+let month = document.getElementById("month").value;
+
+fetch(`/report?month=${month}`)
+.then(res=>res.json())
+.then(data=>{
+
+document.getElementById("report").innerHTML = `
+Orders: ${data.orders}<br>
+Sales: Rs ${data.sales}
+`;
+
+});
+
+}
+
+function drawPie(){
+
+fetch("/orders")
+.then(res=>res.json())
+.then(data=>{
+
+let canvas = document.getElementById("pieChart");
+let ctx = canvas.getContext("2d");
+
+ctx.clearRect(0,0,300,300);
+
+let products = {};
+
+data.forEach(o=>{
+
+let items = o.items.split(",");
+
+items.forEach(i=>{
+let name = i.split("x")[0].trim();
+
+if(!products[name]){
+products[name] = 0;
+}
+
+products[name] += 1;
+
+});
+
+});
+
+let total = Object.values(products).reduce((a,b)=>a+b,0);
+
+let start = 0;
+
+let colors = ["red","green","blue","orange","purple","yellow"];
+
+let index = 0;
+
+for(let key in products){
+
+let slice = (products[key]/total)*2*Math.PI;
+
+ctx.beginPath();
+ctx.moveTo(150,150);
+
+ctx.fillStyle = colors[index % colors.length];
+
+ctx.arc(150,150,100,start,start+slice);
+
+ctx.fill();
+
+start += slice;
+
+index++;
+
+}
+
+});
+
+}
+
+function deleteAdmin(username){
+
+fetch(`/delete-admin?username=${username}`)
+.then(res=>res.text())
+.then(data=>{
+
+loadAdmins();
+
+});
+
+}
+
+// 📋 GET ADMINS
+app.get("/admins",(req,res)=>{
+res.json(loadAdmins());
+});
+
+app.get("/update-status",(req,res)=>{
+
+let orders = JSON.parse(fs.readFileSync("orders.json","utf8"));
+
+let id = Number(req.query.id);
+let status = req.query.status;
+
+orders = orders.map(o=>{
+
+if(o.id === id){
+o.status = status;
+}
+
+return o;
+
+});
+
+fs.writeFileSync("orders.json",JSON.stringify(orders,null,2));
+
+res.send("Status Updated ✔");
+
+});
+
+function loadRevenue(){
+
+fetch("/revenue")
+.then(res=>res.json())
+.then(data=>{
+
+document.getElementById("torders").innerText = data.totalOrders;
+document.getElementById("trevenue").innerText = data.totalRevenue;
+
+});
+
+}
+
+function loadReport(){
+
+fetch("/monthly-report")
+.then(res=>res.json())
+.then(data=>{
+
+let html = "";
+
+for(let key in data){
+
+html += `
+<div style="border:1px solid #ccc;margin:10px;padding:10px;">
+
+<b>Month:</b> ${key}<br>
+<b>Orders:</b> ${data[key].orders}<br>
+<b>Revenue:</b> Rs ${data[key].revenue}
+
+</div>
+`;
+
+}
+
+document.getElementById("report").innerHTML = html;
+
+});
+
+}
+
+</script>
+
+</body>
+</html>
