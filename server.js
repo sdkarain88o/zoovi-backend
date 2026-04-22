@@ -8,7 +8,7 @@ const Product = require("./models/Product");
 
 app.use(express.json());
 
-mongoose.connect("mongodb+srv://zooviUser:Zoovi%4012345@cluster0.zwwxqti.mongodb.net/?appName=Cluster0")
+mongoose.connect(process.env.MONGO_URI)
 
 // HOME
 app.get("/",(req,res)=>{
@@ -92,6 +92,8 @@ app.get("/api/products", (req, res) => {
   ]);
 });
 
-app.listen(5000,()=>{
-console.log("Server running on 5000");
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("Server running on", PORT);
 });
