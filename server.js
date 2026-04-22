@@ -8,7 +8,7 @@ const Product = require("./models/Product");
 
 app.use(express.json());
 
-mongoose.connect("mongodb://127.0.0.1:27017/zoovi");
+mongoose.connect("mongodb+srv://zooviUser:Zoovi%4012345@cluster0.zwwxqti.mongodb.net/?appName=Cluster0")
 
 // HOME
 app.get("/",(req,res)=>{
