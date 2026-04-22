@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Zoovi Shop</title>
+</head>
+<body>
+
+<h1>🛍 Zoovi Shop</h1>
+
+<button onclick="getProducts()">Load Products</button>
+
+<div id="data"></div>
+
+<script>
+async function getProducts() {
+  let res = await fetch("https://zoovi-backend-production.up.railway.app/api/products");
+  let data = await res.json();
+  document.getElementById("data").innerText = JSON.stringify(data, null, 2);
+}
+</script>
+
+</body>
+</html>

@@ -63,6 +63,35 @@ return res.json({token:"demo-token"});
 res.json({error:"Invalid login"});
 });
 
+app.get("/api/products", (req, res) => {
+  res.json([
+    {
+      id: 1,
+      name: "Matte Lipstick",
+      price: 799,
+      image: "https://via.placeholder.com/150"
+    },
+    {
+      id: 2,
+      name: "Vitamin C Face Serum",
+      price: 1499,
+      image: "https://via.placeholder.com/150"
+    },
+    {
+      id: 3,
+      name: "BB Cream",
+      price: 999,
+      image: "https://via.placeholder.com/150"
+    },
+    {
+      id: 4,
+      name: "Perfume Mist",
+      price: 1299,
+      image: "https://via.placeholder.com/150"
+    }
+  ]);
+});
+
 app.listen(5000,()=>{
 console.log("Server running on 5000");
 });
