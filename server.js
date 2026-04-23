@@ -3,8 +3,8 @@ const app = express();
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 
-const Order = require("./models/Order");
-const Product = require("./models/Product");
+//const Order = require("./models/Order");
+//const Product = require("./models/Product");
 
 app.use(express.json());
 
@@ -13,33 +13,6 @@ app.use(express.json());
 // HOME
 app.get("/",(req,res)=>{
 res.send("Zoovi Shop Running ✔");
-});
-
-// ORDER
-app.post("/order", async (req,res)=>{
-
-let orderId = Date.now().toString();
-
-let order = new Order({
-orderId,
-items: req.body.items,
-total: req.body.total
-});
-
-await order.save();
-
-res.json({success:true, orderId});
-});
-
-// STOCK
-app.post("/reduce-stock", async (req,res)=>{
-
-await Product.updateOne(
-{name:req.body.name},
-{$inc:{stock:-1}}
-);
-
-res.json({success:true});
 });
 
 // ANALYTICS
